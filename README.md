@@ -2,7 +2,24 @@
 
 Execution tool to run routines passed in as arguments.
 
-By default it will fetch available routines from stroparo/dotfiles otherwise pass in the REPOS global exported, or -r "repos list one per line" to override that default with other routines.
+By default it will fetch available routines from stroparo/dotfiles. To override export the REPOS global variable with one repository per line:
+
+```bash
+export REPOS="https://github.com/user/repo1.git
+https://github.com/user/repo2.git
+https://github.com/user/repo3.git
+..."
+./entry.sh routine1 routine2 ...
+```
+
+Or pass the variable directly in the call:
+
+```bash
+REPOS="https://github.com/user/repo1.git
+https://github.com/user/repo2.git
+https://github.com/user/repo3.git
+..." ./entry.sh routine1 routine2 ...
+```
 
 ## Requirements
 
@@ -33,7 +50,7 @@ The script has self-provisioning capabilities so you can skip downloading and se
 ```bash
 bash -c "$(curl -LSf "https://bitbucket.org/stroparo/runr/raw/master/entry.sh" \
   || curl -LSf "https://raw.githubusercontent.com/stroparo/runr/master/entry.sh")" \
-  entry.sh # [routine1 [routine2 ...]]
+  entry.sh routine1 routine2 ...
 ```
 
 ---
@@ -54,7 +71,7 @@ Download & comprehensive setup:
 curl -LSf -k -o ~/.runr.zip "https://github.com/stroparo/runr/archive/master.zip" \
   && unzip -o ~/.runr.zip -d "$HOME" \
   && cd "$HOME"/runr-master \
-  && ./entry.sh # [routine1 [routine2 ...]]
+  && ./entry.sh routine1 routine2 ...
 ```
 
 ---

@@ -20,8 +20,8 @@ export INSTPROG="$APTPROG"; which "$RPMPROG" >/dev/null 2>&1 && export INSTPROG=
 # #############################################################################
 # Options
 
-: ${FULL:=false}
-export REPOS="https://github.com/stroparo/dotfiles.git"
+: ${REPOS:=https://github.com/stroparo/dotfiles.git}; export REPOS
+: ${VERBOSE:=false}
 
 # Options:
 OPTIND=1
