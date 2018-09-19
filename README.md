@@ -29,7 +29,7 @@ https://github.com/user/repo3.git
 
 ## Basic usage
 
-The main script is ```entry.sh``` at the root directory. Enter the runr directory before calling it -- this is VERY IMPORTANT -- otherwise it will provision itself to ```$HOME/runr-master``` and cd into it by itself before starting.
+The main script is ```entry.sh``` at the root directory. Enter the runr directory before calling it -- this is VERY IMPORTANT -- otherwise it will provision itself to ```$HOME/.runr``` and cd into it by itself before starting.
 
 Please beware of the -r REPOS and the REPOS global variable as explained previously. These repositories are the providers of routines for runr to execute.
 
@@ -70,7 +70,8 @@ Download & comprehensive setup:
 ```bash
 curl -LSf -k -o ~/.runr.zip "https://github.com/stroparo/runr/archive/master.zip" \
   && unzip -o ~/.runr.zip -d "$HOME" \
-  && cd "$HOME"/runr-master \
+  && mv "$HOME"/runr-master "$HOME"/.runr \
+  && cd "$HOME"/.runr \
   && ./entry.sh routine1 routine2 ...
 ```
 

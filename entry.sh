@@ -83,7 +83,7 @@ _archive_runr_dir () {
       echo "${PROGNAME:+$PROGNAME: }WARN: Could not make tarball but kept backup in the '${RUNR_BAK_DIRNAME}' dir." 1>&2
     fi
   else
-    echo "${PROGNAME:+$PROGNAME: }FATAL: Could not archive existing ~/runr-master." 1>&2
+    echo "${PROGNAME:+$PROGNAME: }FATAL: Could not archive existing '${RUNR_DIR}'." 1>&2
     exit 1
   fi
   return 0
@@ -102,7 +102,7 @@ _provision_runr () {
     zip_dir=$(unzip -l "${HOME}"/.runr.zip | head -5 | tail -1 | awk '{print $NF;}')
     echo "Zip dir: '$zip_dir'" 1>&2
     if ! (cd "${HOME}"; mv -f -v "${zip_dir}" "${RUNR_DIR}" 1>&2) ; then
-      echo "${PROGNAME:+$PROGNAME: }FATAL: Could not move '$zip_dir' to ~/runr-master" 1>&2
+      echo "${PROGNAME:+$PROGNAME: }FATAL: Could not move '$zip_dir' to '${RUNR_DIR}'" 1>&2
       exit 1
     fi
   fi
