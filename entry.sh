@@ -7,6 +7,9 @@ export PROGNAME="entry.sh"
 # #############################################################################
 # Globals
 
+export RUNR_DIR="${HOME}/.runr"
+export RUNR_BAK_DIRNAME="${RUNR_DIR}.bak.$(date '+%Y%m%d-%OH%OM%OS')"
+
 : ${DEV:=${HOME}/workspace} ; export DEV
 : ${OVERRIDE_SUBL_PREFS:=false} ; export OVERRIDE_SUBL_PREFS
 : ${VERBOSE:=false} ; export VERBOSE
@@ -20,13 +23,15 @@ export INSTPROG="$APTPROG"; which "$RPMPROG" >/dev/null 2>&1 && export INSTPROG=
 # #############################################################################
 # Options
 
+: ${PRESERVE:=false}
 : ${REPOS:=https://github.com/stroparo/dotfiles.git}; export REPOS
 : ${VERBOSE:=false}
 
 # Options:
 OPTIND=1
-while getopts ':r:v' option ; do
+while getopts ':pr:v' option ; do
   case "${option}" in
+    p) PRESERVE=true;;
     r) export REPOS="$OPTARG";;
     v) VERBOSE=true;;
   esac
@@ -69,47 +74,50 @@ if (! which curl || ! which git || ! which unzip) >/dev/null 2>&1 ; then
 fi
 
 # #############################################################################
+
+_archive_runr_dir () {
+  if mv -f "${RUNR_DIR}" "${RUNR_BAK_DIRNAME}" ; then
+    if tar czf "${RUNR_BAK_DIRNAME}.tar.gz" "${RUNR_BAK_DIRNAME}" ; then
+      rm -f -r "${RUNR_BAK_DIRNAME}"
+    else
+      echo "${PROGNAME:+$PROGNAME: }WARN: Could not make tarball but kept backup in the '${RUNR_BAK_DIRNAME}' dir." 1>&2
+    fi
+  else
+    echo "${PROGNAME:+$PROGNAME: }FATAL: Could not archive existing ~/runr-master." 1>&2
+    exit 1
+  fi
+  return 0
+}
+
 _provision_runr () {
   export RUNR_SRC="https://bitbucket.org/stroparo/runr/get/master.zip"
   export RUNR_SRC_ALT="https://github.com/stroparo/runr/archive/master.zip"
 
-  if [ ! -e ./entry.sh ] && [ ! -d ./runr ] ; then
-
-    if [ -d "${HOME}/runr-master" ] ; then
-      export RUNR_BAK_DIRNAME="${HOME}/.runr-master.bak.$(date '+%Y%m%d-%OH%OM%OS')"
-      if mv -f "${HOME}/runr-master" "$RUNR_BAK_DIRNAME" ; then
-        tar czf "${RUNR_BAK_DIRNAME}.tar.gz" "$RUNR_BAK_DIRNAME" \
-          && rm -f -r "$RUNR_BAK_DIRNAME"
-      else
-        echo "${PROGNAME:+$PROGNAME: }FATAL: Could not archive existing ~/runr-master." 1>&2
-        exit 1
-      fi
-    fi
-
-    # Provide an updated 'runr-master' directory:
+  if [ ! -d "${RUNR_DIR}" ] || (! ${PRESERVE:-false} && _archive_runr_dir) ; then
+    # Provide an updated runr instance:
     curl -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC" \
       || curl -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC_ALT"
     unzip -o "${HOME}"/.runr.zip -d "${HOME}" \
       || exit $?
     zip_dir=$(unzip -l "${HOME}"/.runr.zip | head -5 | tail -1 | awk '{print $NF;}')
     echo "Zip dir: '$zip_dir'" 1>&2
-    if ! (cd "${HOME}"; mv -f -v "${zip_dir}" "${HOME}/runr-master" 1>&2) ; then
+    if ! (cd "${HOME}"; mv -f -v "${zip_dir}" "${RUNR_DIR}" 1>&2) ; then
       echo "${PROGNAME:+$PROGNAME: }FATAL: Could not move '$zip_dir' to ~/runr-master" 1>&2
       exit 1
     fi
-
-    cd "$HOME/runr-master"
   fi
 
-  if [ ! -e ./entry.sh ] && [ ! -d ./runr ] ; then
-    echo "${PROGNAME:+$PROGNAME: }FATAL: Could not provision runr." 1>&2
+  if [ ! -e "${RUNR_DIR}"/entry.sh ] ; then
+    echo "${PROGNAME:+$PROGNAME: }FATAL: No runr instance available ('${RUNR_DIR}/entry.sh' does not exist)." 1>&2
+    exit 1
   fi
 
-  export RUNR_DIR="$PWD"
-  find "$RUNR_DIR" -name '*.sh' -type f -exec chmod u+x {} \;
-  if ! (echo "$PATH" | fgrep -q "$(basename "$RUNR_DIR")") ; then
+  cd "${RUNR_DIR}"
+
+  find "${RUNR_DIR}" -name '*.sh' -type f -exec chmod u+x {} \;
+  if ! (echo "$PATH" | fgrep -q "$(basename "${RUNR_DIR}")") ; then
     # Root intentionally omitted from PATH as these must be called with absolute path:
-    export PATH="$RUNR_DIR/installers:$RUNR_DIR/recipes:$RUNR_DIR/scripts:$PATH"
+    export PATH="${RUNR_DIR}/installers:${RUNR_DIR}/recipes:${RUNR_DIR}/scripts:$PATH"
   fi
 }
 _provision_runr
