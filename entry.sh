@@ -117,20 +117,21 @@ _provision_runr
 # #############################################################################
 # Clone repos with sequences to be ran
 
-mkdir "${RUNR_DIR}/tmp"
-if [ ! -d "${RUNR_DIR}/tmp" ] ; then
-  echo "${PROGNAME:+$PROGNAME: }FATAL: There was some error creating temp dir at '${RUNR_DIR}/tmp'." 1>&2
+RUNR_TMP="${RUNR_DIR}/tmp"
+mkdir "${RUNR_TMP}"
+if [ ! -d "${RUNR_TMP}" ] ; then
+  echo "${PROGNAME:+$PROGNAME: }FATAL: There was some error creating temp dir at '${RUNR_TMP}'." 1>&2
   exit 1
 fi
 
 if [ -n "$REPOS" ] ; then
   while read repo ; do
-    git archive --remote="$repo" master | tar -xf - -C "${RUNR_DIR}/tmp"
     repo_basename=$(basename "${repo%.git}")
-    if mv -i "${RUNR_DIR}/tmp/${repo_basename}"/* "${RUNR_DIR}"/ ; then
-      rm -f -r "${RUNR_DIR}/tmp/${repo_basename}"
+    git clone --depth=1 "$repo" "${RUNR_TMP}/${repo_basename}"
+    if cp -f -R -v "${RUNR_TMP}/${repo_basename}"/* "${RUNR_DIR}"/ ; then
+      rm -f -r "${RUNR_TMP}/${repo_basename}"
     else
-      echo "${PROGNAME:+$PROGNAME: }WARN: There was some error deploying '${RUNR_DIR}/tmp/${repo_basename}' files to '${RUNR_DIR}'." 1>&2
+      echo "${PROGNAME:+$PROGNAME: }WARN: There was some error deploying '${RUNR_TMP}/${repo_basename}' files to '${RUNR_DIR}'." 1>&2
     fi
   done <<EOF
 $REPOS
