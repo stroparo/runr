@@ -151,8 +151,8 @@ fi
 
 for recipe in "$@" ; do
   for dir in */ ; do
-    if [ -f ./"${dir}/${recipe%.sh}".sh ] ; then
-      bash ./"${dir}/${recipe%.sh}".sh
+    if [ -f "./${dir%/}/${recipe%.sh}.sh" ] ; then
+      bash "./${dir%/}/${recipe%.sh}.sh"
     fi
   done
 done
