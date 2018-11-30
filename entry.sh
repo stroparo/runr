@@ -7,14 +7,19 @@ export PROGNAME="entry.sh"
 # #############################################################################
 # Globals
 
-export USAGE="[-u] [-r repos_list]"
+export USAGE="Syntax
+$PROGNAME [-u] [-r repos_list] [-v]
+
+-u  has runr update itself i.e. its core
+-r  repository(ies) desired instead of the default (stroparo/dotfiles)
+-v  verbose outputs
+"
 
 export RUNR_DIR="${HOME}/.runr"
 export RUNR_BAK_DIRNAME="${RUNR_DIR}.bak.$(date '+%Y%m%d-%OH%OM%OS')"
 
 : ${DEV:=${HOME}/workspace} ; export DEV
 : ${OVERRIDE_SUBL_PREFS:=false} ; export OVERRIDE_SUBL_PREFS
-: ${VERBOSE:=false} ; export VERBOSE
 
 # System installers
 export APTPROG=apt-get; which apt >/dev/null 2>&1 && export APTPROG=apt
@@ -26,7 +31,7 @@ export INSTPROG="$APTPROG"; which "$RPMPROG" >/dev/null 2>&1 && export INSTPROG=
 # Options
 
 : ${REPOS:=https://github.com/stroparo/dotfiles.git}; export REPOS
-: ${UPDATE_LOCAL_INSTANCE:=false}
+: ${UPDATE_LOCAL_RUNR:=false}
 : ${VERBOSE:=false}
 
 # Options:
@@ -34,8 +39,8 @@ OPTIND=1
 while getopts ':r:uv' option ; do
   case "${option}" in
     r) export REPOS="$OPTARG";;
-    u) UPDATE_LOCAL_INSTANCE=true;;
-    v) VERBOSE=true;;
+    u) export UPDATE_LOCAL_RUNR=true;;
+    v) VERBOSE=true; VERBOSE_OPTION='v';;
   esac
 done
 shift "$((OPTIND-1))"
@@ -80,7 +85,7 @@ fi
 _archive_runr_dir () {
   if [ -d "${RUNR_DIR}" ] ; then
     if mv -f "${RUNR_DIR}" "${RUNR_BAK_DIRNAME}" ; then
-      if tar czf "${RUNR_BAK_DIRNAME}.tar.gz" "${RUNR_BAK_DIRNAME}" ; then
+      if tar cz${VERBOSE_OPTION}f "${RUNR_BAK_DIRNAME}.tar.gz" "${RUNR_BAK_DIRNAME}" ; then
         rm -f -r "${RUNR_BAK_DIRNAME}"
       else
         echo "${PROGNAME:+$PROGNAME: }WARN: Could not make tarball but kept backup in the '${RUNR_BAK_DIRNAME}' dir." 1>&2
@@ -97,7 +102,7 @@ _provision_runr () {
   export RUNR_SRC="https://bitbucket.org/stroparo/runr/get/master.zip"
   export RUNR_SRC_ALT="https://github.com/stroparo/runr/archive/master.zip"
 
-  if [ ! -d "${RUNR_DIR}" ] || (${UPDATE_LOCAL_INSTANCE:-false} && _archive_runr_dir) ; then
+  if [ ! -d "${RUNR_DIR}" ] || (${UPDATE_LOCAL_RUNR:-false} && _archive_runr_dir) ; then
     # Provide an updated runr instance:
     curl -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC" \
       || curl -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC_ALT"
@@ -105,7 +110,7 @@ _provision_runr () {
       || exit $?
     zip_dir=$(unzip -l "${HOME}"/.runr.zip | head -5 | tail -1 | awk '{print $NF;}')
     echo "Zip dir: '$zip_dir'" 1>&2
-    if ! (cd "${HOME}"; mv -f -v "${zip_dir}" "${RUNR_DIR}" 1>&2) ; then
+    if ! (cd "${HOME}"; mv -f ${VERBOSE_OPTION:+-${VERBOSE_OPTION}} "${zip_dir}" "${RUNR_DIR}" 1>&2) ; then
       echo "${PROGNAME:+$PROGNAME: }FATAL: Could not move '$zip_dir' to '${RUNR_DIR}'" 1>&2
       exit 1
     fi
@@ -140,7 +145,7 @@ if [ -n "$REPOS" ] ; then
   while read repo ; do
     repo_basename=$(basename "${repo%.git}")
     git clone --depth=1 "$repo" "${RUNR_TMP}/${repo_basename}"
-    if cp -f -R -v "${RUNR_TMP}/${repo_basename}"/* "${RUNR_DIR}"/ ; then
+    if cp -f -R ${VERBOSE_OPTION:+-${VERBOSE_OPTION}} "${RUNR_TMP}/${repo_basename}"/* "${RUNR_DIR}"/ ; then
       rm -f -r "${RUNR_TMP}/${repo_basename}"
     else
       echo "${PROGNAME:+$PROGNAME: }WARN: There was some error deploying '${RUNR_TMP}/${repo_basename}' files to '${RUNR_DIR}'." 1>&2
