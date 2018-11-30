@@ -8,11 +8,13 @@ export PROGNAME="entry.sh"
 # Globals
 
 export USAGE="Syntax
-$PROGNAME [-u] [-r repos_list] [-v]
+$PROGNAME [-d runr_dir] [-u] [-r repos_list] [-v]
 
+-d runr_dir
+    Overrides default RUNR_DIR
 -u  has runr update itself i.e. its core
 -r  repository(ies) desired instead of the default (stroparo/dotfiles)
--v  verbose outputs
+-v  verbose output
 "
 
 export RUNR_DIR="${HOME}/.runr"
@@ -36,8 +38,9 @@ export INSTPROG="$APTPROG"; which "$RPMPROG" >/dev/null 2>&1 && export INSTPROG=
 
 # Options:
 OPTIND=1
-while getopts ':r:uv' option ; do
+while getopts ':d:r:uv' option ; do
   case "${option}" in
+    d) export RUNR_DIR="$OPTARG";;
     r) export REPOS="$OPTARG";;
     u) export UPDATE_LOCAL_RUNR=true;;
     v) VERBOSE=true; VERBOSE_OPTION='v';;
@@ -103,6 +106,8 @@ _provision_runr () {
   export RUNR_SRC="https://bitbucket.org/stroparo/runr/get/master.zip"
   export RUNR_SRC_ALT="https://github.com/stroparo/runr/archive/master.zip"
 
+  echo "Runr dir: '${RUNR_DIR}'" 1>&2
+
   if [ ! -d "${RUNR_DIR}" ] || (${UPDATE_LOCAL_RUNR:-false} && _archive_runr_dir) ; then
     # Provide an updated runr instance:
     curl -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC" \
@@ -110,9 +115,11 @@ _provision_runr () {
     unzip -o "${HOME}"/.runr.zip -d "${HOME}" \
       || exit $?
     zip_dir=$(unzip -l "${HOME}"/.runr.zip | head -5 | tail -1 | awk '{print $NF;}')
-    echo "Zip dir: '$zip_dir'" 1>&2
+
+    echo "Zip dir: '${zip_dir}'" 1>&2
+
     if ! (cd "${HOME}"; mv -f ${VERBOSE_OPTION:+-${VERBOSE_OPTION}} "${zip_dir}" "${RUNR_DIR}" 1>&2) ; then
-      echo "${PROGNAME:+$PROGNAME: }FATAL: Could not move '$zip_dir' to '${RUNR_DIR}'" 1>&2
+      echo "${PROGNAME:+$PROGNAME: }FATAL: Could not move '${zip_dir}' to '${RUNR_DIR}'" 1>&2
       exit 1
     fi
   fi
