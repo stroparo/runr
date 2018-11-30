@@ -7,6 +7,8 @@ export PROGNAME="entry.sh"
 # #############################################################################
 # Globals
 
+export USAGE="[-u] [-r repos_list]"
+
 export RUNR_DIR="${HOME}/.runr"
 export RUNR_BAK_DIRNAME="${RUNR_DIR}.bak.$(date '+%Y%m%d-%OH%OM%OS')"
 
@@ -23,16 +25,16 @@ export INSTPROG="$APTPROG"; which "$RPMPROG" >/dev/null 2>&1 && export INSTPROG=
 # #############################################################################
 # Options
 
-: ${PRESERVE:=false}
 : ${REPOS:=https://github.com/stroparo/dotfiles.git}; export REPOS
+: ${UPDATE_LOCAL_INSTANCE:=false}
 : ${VERBOSE:=false}
 
 # Options:
 OPTIND=1
-while getopts ':pr:v' option ; do
+while getopts ':r:uv' option ; do
   case "${option}" in
-    p) PRESERVE=true;;
     r) export REPOS="$OPTARG";;
+    u) UPDATE_LOCAL_INSTANCE=true;;
     v) VERBOSE=true;;
   esac
 done
@@ -76,15 +78,17 @@ fi
 # #############################################################################
 
 _archive_runr_dir () {
-  if mv -f "${RUNR_DIR}" "${RUNR_BAK_DIRNAME}" ; then
-    if tar czf "${RUNR_BAK_DIRNAME}.tar.gz" "${RUNR_BAK_DIRNAME}" ; then
-      rm -f -r "${RUNR_BAK_DIRNAME}"
+  if [ -d "${RUNR_DIR}" ] ; then
+    if mv -f "${RUNR_DIR}" "${RUNR_BAK_DIRNAME}" ; then
+      if tar czf "${RUNR_BAK_DIRNAME}.tar.gz" "${RUNR_BAK_DIRNAME}" ; then
+        rm -f -r "${RUNR_BAK_DIRNAME}"
+      else
+        echo "${PROGNAME:+$PROGNAME: }WARN: Could not make tarball but kept backup in the '${RUNR_BAK_DIRNAME}' dir." 1>&2
+      fi
     else
-      echo "${PROGNAME:+$PROGNAME: }WARN: Could not make tarball but kept backup in the '${RUNR_BAK_DIRNAME}' dir." 1>&2
+      echo "${PROGNAME:+$PROGNAME: }FATAL: Could not archive existing '${RUNR_DIR}'." 1>&2
+      exit 1
     fi
-  else
-    echo "${PROGNAME:+$PROGNAME: }FATAL: Could not archive existing '${RUNR_DIR}'." 1>&2
-    exit 1
   fi
   return 0
 }
@@ -93,7 +97,7 @@ _provision_runr () {
   export RUNR_SRC="https://bitbucket.org/stroparo/runr/get/master.zip"
   export RUNR_SRC_ALT="https://github.com/stroparo/runr/archive/master.zip"
 
-  if [ ! -d "${RUNR_DIR}" ] || (! ${PRESERVE:-false} && _archive_runr_dir) ; then
+  if [ ! -d "${RUNR_DIR}" ] || (${UPDATE_LOCAL_INSTANCE:-false} && _archive_runr_dir) ; then
     # Provide an updated runr instance:
     curl -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC" \
       || curl -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC_ALT"
@@ -142,7 +146,7 @@ if [ -n "$REPOS" ] ; then
       echo "${PROGNAME:+$PROGNAME: }WARN: There was some error deploying '${RUNR_TMP}/${repo_basename}' files to '${RUNR_DIR}'." 1>&2
     fi
   done <<EOF
-$REPOS
+$(echo "$REPOS" | tr -s ' ' '\n')
 EOF
 fi
 
