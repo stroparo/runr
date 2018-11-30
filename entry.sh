@@ -118,7 +118,7 @@ _provision_runr () {
 
     echo "Zip dir: '${zip_dir}'" 1>&2
 
-    if ! (cd "${HOME}"; mv -f ${VERBOSE_OPTION:+-${VERBOSE_OPTION}} "${zip_dir}" "${RUNR_DIR}" 1>&2) ; then
+    if ! (cd "${HOME}"; mv -f -v "${zip_dir}" "${RUNR_DIR}" 1>&2) ; then
       echo "${PROGNAME:+$PROGNAME: }FATAL: Could not move '${zip_dir}' to '${RUNR_DIR}'" 1>&2
       exit 1
     fi
