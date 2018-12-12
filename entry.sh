@@ -11,10 +11,12 @@ export USAGE="Syntax
 $PROGNAME [-d runr_dir] [-u] [-r repos_list] [-v]
 
 -d runr_dir
-    Overrides default RUNR_DIR
--u  has runr update itself i.e. its core
--r  repository(ies) desired instead of the default (stroparo/dotfiles)
--v  verbose output
+      Overrides default RUNR_DIR
+
+-k    use insecure curl ie do not check for certificates, ssl etc.
+-r    repository(ies) desired instead of the default (stroparo/dotfiles)
+-u    has runr update itself i.e. its core, runs prior to any recipe
+-v    verbose output
 "
 
 export RUNR_DIR="${HOME}/.runr"
@@ -22,6 +24,12 @@ export RUNR_BAK_DIRNAME="${RUNR_DIR}.bak.$(date '+%Y%m%d-%OH%OM%OS')"
 
 : ${DEV:=${HOME}/workspace} ; export DEV
 : ${OVERRIDE_SUBL_PREFS:=false} ; export OVERRIDE_SUBL_PREFS
+
+# Security
+: ${IGNORE_SSL:=false} ; export IGNORE_SSL
+if ${IGNORE_SSL:-false} ; then
+  export IGNORE_SSL_OPTION="-k"
+fi
 
 # System installers
 export APTPROG=apt-get; which apt >/dev/null 2>&1 && export APTPROG=apt
@@ -38,12 +46,13 @@ export INSTPROG="$APTPROG"; which "$RPMPROG" >/dev/null 2>&1 && export INSTPROG=
 
 # Options:
 OPTIND=1
-while getopts ':d:r:uv' option ; do
+while getopts ':d:kr:uv' option ; do
   case "${option}" in
-    d) export RUNR_DIR="$OPTARG";;
-    r) export REPOS="$OPTARG";;
-    u) export UPDATE_LOCAL_RUNR=true;;
-    v) VERBOSE=true; VERBOSE_OPTION='v';;
+    d) export RUNR_DIR="$OPTARG" ;;
+    k) export IGNORE_SSL=true ;;
+    r) export REPOS="$OPTARG" ;;
+    u) export UPDATE_LOCAL_RUNR=true ;;
+    v) VERBOSE=true; VERBOSE_OPTION="v" ;;
   esac
 done
 shift "$((OPTIND-1))"
@@ -110,8 +119,8 @@ _provision_runr () {
 
   if [ ! -d "${RUNR_DIR}" ] || (${UPDATE_LOCAL_RUNR:-false} && _archive_runr_dir) ; then
     # Provide an updated runr instance:
-    curl -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC" \
-      || curl -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC_ALT"
+    curl ${IGNORE_SSL_OPTION} -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC" \
+      || curl ${IGNORE_SSL_OPTION} -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC_ALT"
     unzip -o "${HOME}"/.runr.zip -d "${HOME}" \
       || exit $?
     zip_dir=$(unzip -l "${HOME}"/.runr.zip | head -5 | tail -1 | awk '{print $NF;}')
