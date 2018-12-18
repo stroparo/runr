@@ -60,6 +60,7 @@ shift "$((OPTIND-1))"
 # #############################################################################
 # Helpers
 
+
 _install_packages () {
   for package in "$@" ; do
     echo "Installing '$package'..."
@@ -69,9 +70,11 @@ _install_packages () {
   done
 }
 
+
 _print_bar () {
   echo "################################################################################"
 }
+
 
 # #############################################################################
 # Dependencies
@@ -95,6 +98,7 @@ fi
 # #############################################################################
 # Provisioning
 
+
 _archive_runr_dir () {
   if [ -d "${RUNR_DIR}" ] ; then
     if mv -f "${RUNR_DIR}" "${RUNR_BAK_DIRNAME}" ; then
@@ -110,6 +114,7 @@ _archive_runr_dir () {
   fi
   return 0
 }
+
 
 _provision_runr () {
   export RUNR_SRC="https://bitbucket.org/stroparo/runr/get/master.zip"
@@ -147,6 +152,17 @@ _provision_runr () {
   fi
 }
 _provision_runr
+
+
+_exclude_non_runr_files () {
+  if [ -f "${RUNR_DIR:-${HOME}/.runr}"/entry.sh ] ; then
+    ls -1 -d "${RUNR_DIR:-${HOME}/.runr}"/* 2>/dev/null \
+      | egrep -v "/(entry.sh|README.md)$" \
+      | xargs rm -f -r
+  fi
+}
+_exclude_non_runr_files
+
 
 # #############################################################################
 # Clone repos with sequences to be ran
