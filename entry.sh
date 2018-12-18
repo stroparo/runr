@@ -152,7 +152,7 @@ _provision_runr
 # Clone repos with sequences to be ran
 
 RUNR_TMP="${RUNR_DIR}/tmp"
-mkdir "${RUNR_TMP}"
+mkdir "${RUNR_TMP}" 2>/dev/null
 if [ ! -d "${RUNR_TMP}" ] ; then
   echo "${PROGNAME:+$PROGNAME: }FATAL: There was some error creating temp dir at '${RUNR_TMP}'." 1>&2
   exit 1
