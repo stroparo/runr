@@ -8,12 +8,13 @@ export PROGNAME="entry.sh"
 # Globals
 
 export USAGE="Syntax
-$PROGNAME [-d runr_dir] [-u] [-r repos_list] [-v]
+$PROGNAME [-d runr_dir] [-q] [-r repos_list] [-u] [-v]
 
 -d runr_dir
       Overrides default RUNR_DIR
 
 -k    use insecure curl ie do not check for certificates, ssl etc.
+-q    quiet
 -r    repository(ies) desired instead of the default (stroparo/dotfiles)
 -u    has runr update itself i.e. its core, runs prior to any recipe
 -v    verbose output
@@ -41,21 +42,29 @@ export INSTPROG="$APTPROG"; which "$RPMPROG" >/dev/null 2>&1 && export INSTPROG=
 # Options
 
 : ${REPOS:=https://github.com/stroparo/dotfiles.git}; export REPOS
+: ${RUNR_QUIET:=false}
 : ${UPDATE_LOCAL_RUNR:=false}
 : ${VERBOSE:=false}
 
 # Options:
 OPTIND=1
-while getopts ':d:kr:uv' option ; do
+while getopts ':d:kqr:uv' option ; do
   case "${option}" in
     d) export RUNR_DIR="$OPTARG" ;;
     k) export IGNORE_SSL=true ;;
+    q) RUNR_QUIET=true ;;
     r) export REPOS="$OPTARG" ;;
     u) export UPDATE_LOCAL_RUNR=true ;;
     v) VERBOSE=true; VERBOSE_OPTION="v" ;;
   esac
 done
 shift "$((OPTIND-1))"
+
+export RUNR_QUIET
+
+if ${RUNR_QUIET:-false} ; then
+  RUNR_QUIET_OPTION_Q='-q'
+fi
 
 # #############################################################################
 # Helpers
@@ -120,10 +129,13 @@ _provision_runr () {
   export RUNR_SRC="https://bitbucket.org/stroparo/runr/get/master.zip"
   export RUNR_SRC_ALT="https://github.com/stroparo/runr/archive/master.zip"
 
-  echo "Runr dir: '${RUNR_DIR}'" 1>&2
+  if ! ${RUNR_QUIET:-false} ; then
+    echo 1>&2
+    echo "RUNR dir: '${RUNR_DIR}'" 1>&2
+  fi
 
   if [ ! -d "${RUNR_DIR}" ] || (${UPDATE_LOCAL_RUNR:-false} && _archive_runr_dir) ; then
-    # Provide an updated runr instance:
+    # Provide an updated RUNR instance:
     curl ${IGNORE_SSL_OPTION} -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC" \
       || curl ${IGNORE_SSL_OPTION} -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC_ALT"
     unzip -o "${HOME}"/.runr.zip -d "${HOME}" \
@@ -139,7 +151,7 @@ _provision_runr () {
   fi
 
   if [ ! -e "${RUNR_DIR}"/entry.sh ] ; then
-    echo "${PROGNAME:+$PROGNAME: }FATAL: No runr instance available ('${RUNR_DIR}/entry.sh' does not exist)." 1>&2
+    echo "${PROGNAME:+$PROGNAME: }FATAL: No RUNR instance available ('${RUNR_DIR}/entry.sh' does not exist)." 1>&2
     exit 1
   fi
 
@@ -177,7 +189,7 @@ fi
 if [ -n "$REPOS" ] ; then
   while read repo ; do
     repo_basename=$(basename "${repo%.git}")
-    git clone --depth=1 "$repo" "${RUNR_TMP}/${repo_basename}"
+    git clone --depth=1 ${RUNR_QUIET_OPTION_Q} "$repo" "${RUNR_TMP}/${repo_basename}"
     if cp -f -R ${VERBOSE_OPTION:+-${VERBOSE_OPTION}} "${RUNR_TMP}/${repo_basename}"/* "${RUNR_DIR}"/ ; then
       rm -f -r "${RUNR_TMP}/${repo_basename}"
     else
