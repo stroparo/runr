@@ -136,8 +136,8 @@ _provision_runr () {
 
   if [ ! -d "${RUNR_DIR}" ] || (${UPDATE_LOCAL_RUNR:-false} && _archive_runr_dir) ; then
     # Provide an updated RUNR instance:
-    curl ${IGNORE_SSL_OPTION} -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC" \
-      || curl ${IGNORE_SSL_OPTION} -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC_ALT"
+    curl --tlsv1.3 ${IGNORE_SSL_OPTION} -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC" \
+      || curl --tlsv1.3 ${IGNORE_SSL_OPTION} -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC_ALT"
     unzip -o "${HOME}"/.runr.zip -d "${HOME}" \
       || exit $?
     zip_dir=$(unzip -l "${HOME}"/.runr.zip | head -5 | tail -1 | awk '{print $NF;}')
