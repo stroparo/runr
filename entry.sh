@@ -41,7 +41,7 @@ export INSTPROG="$APTPROG"; which "$RPMPROG" >/dev/null 2>&1 && export INSTPROG=
 # #############################################################################
 # Options
 
-: ${REPOS:=https://github.com/stroparo/dotfiles.git}; export REPOS
+: ${RUNR_REPOS:=https://github.com/stroparo/dotfiles.git}; export RUNR_REPOS
 : ${RUNR_QUIET:=false}
 : ${UPDATE_LOCAL_RUNR:=false}
 : ${VERBOSE:=false}
@@ -53,7 +53,7 @@ while getopts ':d:kqr:uv' option ; do
     d) export RUNR_DIR="$OPTARG" ;;
     k) export IGNORE_SSL=true ;;
     q) RUNR_QUIET=true ;;
-    r) export REPOS="$OPTARG" ;;
+    r) export RUNR_REPOS="$OPTARG" ;;
     u) export UPDATE_LOCAL_RUNR=true ;;
     v) VERBOSE=true; VERBOSE_OPTION="v" ;;
   esac
@@ -186,7 +186,7 @@ if [ ! -d "${RUNR_TMP}" ] ; then
   exit 1
 fi
 
-if [ -n "$REPOS" ] ; then
+if [ -n "$RUNR_REPOS" ] ; then
   while read repo ; do
     repo_basename=$(basename "${repo%.git}")
     git clone --depth=1 ${RUNR_QUIET_OPTION_Q} "$repo" "${RUNR_TMP}/${repo_basename}"
@@ -196,7 +196,7 @@ if [ -n "$REPOS" ] ; then
       echo "${PROGNAME:+$PROGNAME: }WARN: There was some error deploying '${RUNR_TMP}/${repo_basename}' files to '${RUNR_DIR}'." 1>&2
     fi
   done <<EOF
-$(echo "$REPOS" | tr -s ' ' '\n')
+$(echo "$RUNR_REPOS" | tr -s ' ' '\n')
 EOF
 fi
 
