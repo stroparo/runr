@@ -160,17 +160,20 @@ _provision_runr () {
   fi
 
   cd "${RUNR_DIR}"
-
-  find "${RUNR_DIR}" -name '*.sh' -type f -exec chmod u+x {} \;
-  if ! (echo "$PATH" | fgrep -q "$(basename "${RUNR_DIR}")") ; then
-    # Root intentionally omitted from PATH as these must be called with absolute path:
-    export PATH="${RUNR_DIR}/installers:${RUNR_DIR}/recipes:${RUNR_DIR}/scripts:$PATH"
+  if ! ${RUNR_QUIET:-false} ; then
+    echo 1>&2
+    echo "Current dir (should be RUNR's): '$(pwd)'" 1>&2
   fi
 }
 _provision_runr
 
 
 _exclude_non_runr_files () {
+
+  if ${RUNR_REPOS_KEEP} ; then
+    return
+  fi
+
   if [ -f "${RUNR_DIR:-${HOME}/.runr}"/entry.sh ] ; then
     ls -1 -d "${RUNR_DIR:-${HOME}/.runr}"/* 2>/dev/null \
       | egrep -v "/(entry.sh|README.md)$" \
@@ -190,7 +193,7 @@ if [ ! -d "${RUNR_TMP}" ] ; then
   exit 1
 fi
 
-if [ -n "$RUNR_REPOS" ] ; then
+if ! ${RUNR_REPOS_KEEP} && [ -n "$RUNR_REPOS" ] ; then
   while read repo ; do
     repo_basename=$(basename "${repo%.git}")
     git clone --depth=1 ${RUNR_QUIET_OPTION_Q} "$repo" "${RUNR_TMP}/${repo_basename}"
