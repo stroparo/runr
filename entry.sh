@@ -8,8 +8,10 @@ export PROGNAME="entry.sh"
 # Globals
 
 export USAGE="Syntax
-$PROGNAME [-d runr_dir] [-q] [-r repos_list] [-u] [-v]
+$PROGNAME [-c] [-d runr_dir] [-q] [-r repos_list] [-u] [-v]
 
+-c    Keeps previous assets repos i.e. do not clone repos with recipes
+      (must have one from a previous run in order to look recipes up)
 -d runr_dir
       Overrides default RUNR_DIR
 
@@ -41,6 +43,7 @@ export INSTPROG="$APTPROG"; which "$RPMPROG" >/dev/null 2>&1 && export INSTPROG=
 # #############################################################################
 # Options
 
+: ${RUNR_REPOS_KEEP:=false}
 : ${RUNR_REPOS:=https://github.com/stroparo/dotfiles.git}; export RUNR_REPOS
 : ${RUNR_QUIET:=false}
 : ${UPDATE_LOCAL_RUNR:=false}
@@ -48,8 +51,9 @@ export INSTPROG="$APTPROG"; which "$RPMPROG" >/dev/null 2>&1 && export INSTPROG=
 
 # Options:
 OPTIND=1
-while getopts ':d:kqr:uv' option ; do
+while getopts ':cd:kqr:uv' option ; do
   case "${option}" in
+    c) export RUNR_REPOS_KEEP=true ;;
     d) export RUNR_DIR="$OPTARG" ;;
     k) export IGNORE_SSL=true ;;
     q) RUNR_QUIET=true ;;
