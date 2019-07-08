@@ -30,9 +30,6 @@ export RUNR_BAK_DIRNAME="${RUNR_DIR}.bak.$(date '+%Y%m%d-%OH%OM%OS')"
 
 # Security
 : ${IGNORE_SSL:=false} ; export IGNORE_SSL
-if ${IGNORE_SSL:-false} ; then
-  export IGNORE_SSL_OPTION="-k"
-fi
 
 # System installers
 export APTPROG=apt-get; which apt >/dev/null 2>&1 && export APTPROG=apt
@@ -65,9 +62,12 @@ done
 shift "$((OPTIND-1))"
 
 export RUNR_QUIET
-
 if ${RUNR_QUIET:-false} ; then
   RUNR_QUIET_OPTION_Q='-q'
+fi
+
+if ${IGNORE_SSL:-false} ; then
+  export IGNORE_SSL_OPTION="-k"
 fi
 
 # #############################################################################
@@ -140,8 +140,8 @@ _provision_runr () {
 
   if [ ! -d "${RUNR_DIR}" ] || (${UPDATE_LOCAL_RUNR:-false} && _archive_runr_dir) ; then
     # Provide an updated RUNR instance:
-    curl --tlsv1.3 ${IGNORE_SSL_OPTION} -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC" \
-      || curl --tlsv1.3 ${IGNORE_SSL_OPTION} -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC_ALT"
+    curl ${DLOPTEXTRA} ${IGNORE_SSL_OPTION} -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC" \
+      || curl ${DLOPTEXTRA} ${IGNORE_SSL_OPTION} -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC_ALT"
     unzip -o "${HOME}"/.runr.zip -d "${HOME}" \
       || exit $?
     zip_dir=$(unzip -l "${HOME}"/.runr.zip | head -5 | tail -1 | awk '{print $NF;}')
