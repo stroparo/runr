@@ -22,7 +22,7 @@ $PROGNAME [-c] [-d runr_dir] [-q] [-r repos_list] [-u] [-v]
 -v    verbose output
 "
 
-export RUNR_DIR="${HOME}/.runr"
+: ${RUNR_DIR:=${HOME}/.runr} ; export RUNR_DIR
 export RUNR_BAK_DIRNAME="${RUNR_DIR}.bak.$(date '+%Y%m%d-%OH%OM%OS')"
 
 : ${DEV:=${HOME}/workspace} ; export DEV
@@ -40,21 +40,21 @@ export INSTPROG="$APTPROG"; which "$RPMPROG" >/dev/null 2>&1 && export INSTPROG=
 # #############################################################################
 # Options
 
-: ${RUNR_REPOS_KEEP:=false}
-: ${RUNR_REPOS:=https://github.com/stroparo/dotfiles.git}; export RUNR_REPOS
+: ${RUNR_ASSETS_KEEP:=false} ; export RUNR_ASSETS_KEEP
+: ${RUNR_ASSETS_REPOS:=https://github.com/stroparo/dotfiles.git}; export RUNR_ASSETS_REPOS
 : ${RUNR_QUIET:=false}
-: ${UPDATE_LOCAL_RUNR:=false}
+: ${UPDATE_LOCAL_RUNR:=false} ; export UPDATE_LOCAL_RUNR
 : ${VERBOSE:=false}
 
 # Options:
 OPTIND=1
 while getopts ':cd:kqr:uv' option ; do
   case "${option}" in
-    c) export RUNR_REPOS_KEEP=true ;;
+    c) export RUNR_ASSETS_KEEP=true ;;
     d) export RUNR_DIR="$OPTARG" ;;
     k) export IGNORE_SSL=true ;;
     q) RUNR_QUIET=true ;;
-    r) export RUNR_REPOS="$OPTARG" ;;
+    r) export RUNR_ASSETS_REPOS="$OPTARG" ;;
     u) export UPDATE_LOCAL_RUNR=true ;;
     v) VERBOSE=true; VERBOSE_OPTION="v" ;;
   esac
@@ -69,6 +69,7 @@ fi
 if ${IGNORE_SSL:-false} ; then
   export IGNORE_SSL_OPTION="-k"
 fi
+
 
 # #############################################################################
 # Helpers
@@ -92,6 +93,7 @@ _print_bar () {
 # #############################################################################
 # Dependencies
 
+
 if (uname | grep -q linux) ; then
   if ! which sudo >/dev/null 2>&1 ; then
     echo "RUNR: WARN: Installing sudo via root and opening up visudo" 1>&2
@@ -108,15 +110,50 @@ if (! which curl || ! which git || ! which unzip) >/dev/null 2>&1 ; then
   _install_packages curl git unzip
 fi
 
+
 # #############################################################################
 # Provisioning
+
+
+_info_runr_dir () {
+  if ! ${RUNR_QUIET:-false} ; then
+    echo 1>&2
+    echo "RUNR: INFO: RUNR dir is '${RUNR_DIR}'." 1>&2
+  fi
+}
+
+
+_exclude_core_files () {
+
+  typeset exclude_root="${1:-$RUNR_DIR}"
+
+  sed -e "#^#${exclude_root}/#" \
+    "${RUNR_DIR}"/core_files.lst \
+    | xargs rm -f -r
+}
+
+
+_exclude_non_core_files () {
+
+  typeset exclude_root="${1:-$RUNR_DIR}"
+
+  sed -e "#^#${exclude_root}/#" "${RUNR_DIR}"/core_files.lst \
+    > "${RUNR_DIR}"/core_files.lst.tmp
+
+  find "${exclude_root}" -depth \
+    | fgrep -v -f "${RUNR_DIR}"/core_files.lst.tmp \
+    | xargs rm -f -r \
+    && rm -f "${RUNR_DIR}"/core_files.lst.tmp
+}
 
 
 _archive_runr_dir () {
   if [ -d "${RUNR_DIR}" ] ; then
     if mv -f "${RUNR_DIR}" "${RUNR_BAK_DIRNAME}" ; then
       if tar cz${VERBOSE_OPTION}f "${RUNR_BAK_DIRNAME}.tar.gz" "${RUNR_BAK_DIRNAME}" ; then
-        rm -f -r "${RUNR_BAK_DIRNAME}"
+        if ! ${RUNR_ASSETS_KEEP} ; then
+          rm -f -r "${RUNR_BAK_DIRNAME}"
+        fi
       else
         echo "RUNR: WARN: Could not make tarball but kept backup in the '${RUNR_BAK_DIRNAME}' dir." 1>&2
       fi
@@ -129,36 +166,62 @@ _archive_runr_dir () {
 }
 
 
-_provision_runr () {
-  export RUNR_SRC="https://bitbucket.org/stroparo/runr/get/master.zip"
-  export RUNR_SRC_ALT="https://github.com/stroparo/runr/archive/master.zip"
+_unarchive_backup_assets () {
+  if ${RUNR_ASSETS_KEEP} ; then
+    _exclude_core_files "${RUNR_BAK_DIRNAME}"
+    mv -f "${RUNR_BAK_DIRNAME}"/* "${RUNR_DIR}"/ \
+      && [ -f "${RUNR_BAK_DIRNAME}.tar.gz" ] \
+      && rm -f -r "${RUNR_BAK_DIRNAME}"
+  fi
+}
 
-  if ! ${RUNR_QUIET:-false} ; then
-    echo 1>&2
-    echo "RUNR dir: '${RUNR_DIR}'" 1>&2
+
+_update_pre_proc () {
+  if ! ${UPDATE_LOCAL_RUNR:-false} ; then
+    return
   fi
 
-  if [ ! -d "${RUNR_DIR}" ] || (${UPDATE_LOCAL_RUNR:-false} && _archive_runr_dir) ; then
-    # Provide an updated RUNR instance:
-    curl ${DLOPTEXTRA} ${IGNORE_SSL_OPTION} -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC" \
-      || curl ${DLOPTEXTRA} ${IGNORE_SSL_OPTION} -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC_ALT"
-    unzip -o "${HOME}"/.runr.zip -d "${HOME}" \
-      || exit $?
-    zip_root_dir=$(unzip -l "${HOME}"/.runr.zip | head -5 | tail -1 | awk '{print $NF;}')
+  _archive_runr_dir
+}
 
-    echo "Zip dir: '${zip_root_dir}'" 1>&2
 
-    if ! (cd "${HOME}"; mv -f -v "${zip_root_dir}" "${RUNR_DIR}" 1>&2) ; then
-      echo "RUNR: FATAL: Could not move '${zip_root_dir}' to '${RUNR_DIR}'" 1>&2
-      exit 1
-    fi
+_update_post_proc () {
+  if ! ${UPDATE_LOCAL_RUNR:-false} ; then
+    return
   fi
 
+  _unarchive_backup_assets
+}
+
+
+_setup_download () {
+  curl ${DLOPTEXTRA} ${IGNORE_SSL_OPTION} -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC" \
+    || curl ${DLOPTEXTRA} ${IGNORE_SSL_OPTION} -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC_ALT"
+}
+
+
+_setup_extract () {
+  unzip -o "${HOME}"/.runr.zip -d "${HOME}" \
+    || exit $?
+}
+
+
+_setup_final_dir () {
+  zip_root_dir=$(unzip -l "${HOME}"/.runr.zip | head -5 | tail -1 | awk '{print $NF;}')
+  echo "RUNR: INFO: RUNR package's root directory: '${zip_root_dir}'" 1>&2
+  echo "RUNR: INFO: RUNR package's root rename to final dir '${RUNR_DIR}':" 1>&2
+  if ! (cd "${HOME}"; mv -f -v "${zip_root_dir}" "${RUNR_DIR}" 1>&2) ; then
+    echo "RUNR: FATAL: Could not move/rename '${zip_root_dir}' to '${RUNR_DIR}'" 1>&2
+    exit 1
+  fi
+}
+
+
+_setup_enforce () {
   if [ ! -e "${RUNR_DIR}"/entry.sh ] ; then
     echo "RUNR: FATAL: No RUNR instance available ('${RUNR_DIR}/entry.sh' does not exist)." 1>&2
     exit 1
   fi
-
   cd "${RUNR_DIR}"
   echo "RUNR: INFO: Current dir (should be RUNR's): '$(pwd)'" 1>&2
   if [ "${RUNR_DIR##*/}" != "${PWD##*/}" ] ; then
@@ -166,55 +229,92 @@ _provision_runr () {
     exit 1
   fi
 }
-_provision_runr
 
 
-_exclude_non_runr_files () {
+_setup () {
 
-  if ${RUNR_REPOS_KEEP} ; then
+  if [ -d "${RUNR_DIR}" ] && ! ${UPDATE_LOCAL_RUNR:-false} ; then
     return
   fi
 
-  if [ -f "${RUNR_DIR:-${HOME}/.runr}"/entry.sh ] ; then
-    ls -1 -d "${RUNR_DIR:-${HOME}/.runr}"/* 2>/dev/null \
-      | egrep -v "/(entry.sh|README.md)$" \
-      | xargs rm -f -r
+  _setup_download
+  _setup_extract
+  _setup_final_dir
+  _setup_enforce
+}
+
+
+_provision_runr () {
+  export RUNR_SRC="https://bitbucket.org/stroparo/runr/get/master.zip"
+  export RUNR_SRC_ALT="https://github.com/stroparo/runr/archive/master.zip"
+
+  _info_runr_dir
+  _update_pre_proc
+  _setup
+  _update_post_proc
+  if ! ${RUNR_ASSETS_KEEP} ; then
+    _exclude_non_core_files
   fi
 }
-_exclude_non_runr_files
 
 
 # #############################################################################
-# Clone repos with sequences to be ran
+# Asset retrieval
 
+
+_clone_assets_prep () {
 RUNR_TMP="${RUNR_DIR}/tmp"
-mkdir "${RUNR_TMP}" 2>/dev/null
-if [ ! -d "${RUNR_TMP}" ] ; then
-  echo "RUNR: FATAL: There was some error creating temp dir at '${RUNR_TMP}'." 1>&2
-  exit 1
-fi
+  mkdir "${RUNR_TMP}" 2>/dev/null
+  if [ ! -d "${RUNR_TMP}" ] ; then
+    echo "RUNR: FATAL: There was some error creating temp dir at '${RUNR_TMP}'." 1>&2
+    exit 1
+  fi
+}
 
-if ! ${RUNR_REPOS_KEEP} && [ -n "$RUNR_REPOS" ] ; then
-  while read repo ; do
-    repo_basename=$(basename "${repo%.git}")
-    git clone --depth=1 ${RUNR_QUIET_OPTION_Q} "$repo" "${RUNR_TMP}/${repo_basename}"
-    if cp -f -R ${VERBOSE_OPTION:+-${VERBOSE_OPTION}} "${RUNR_TMP}/${repo_basename}"/* "${RUNR_DIR}"/ ; then
-      rm -f -r "${RUNR_TMP}/${repo_basename}"
-    else
-      echo "RUNR: WARN: There was some error deploying '${RUNR_TMP}/${repo_basename}' files to '${RUNR_DIR}'." 1>&2
-    fi
-  done <<EOF
-$(echo "$RUNR_REPOS" | tr -s ' ' '\n')
+
+_clone_assets () {
+
+  _clone_assets_prep
+
+  if ! ${RUNR_ASSETS_KEEP} && [ -n "$RUNR_ASSETS_REPOS" ] ; then
+    while read repo ; do
+      repo_basename=$(basename "${repo%.git}")
+      git clone --depth=1 ${RUNR_QUIET_OPTION_Q} "$repo" "${RUNR_TMP}/${repo_basename}"
+      if cp -f -R ${VERBOSE_OPTION:+-${VERBOSE_OPTION}} "${RUNR_TMP}/${repo_basename}"/* "${RUNR_DIR}"/ ; then
+        rm -f -r "${RUNR_TMP}/${repo_basename}"
+      else
+        echo "RUNR: WARN: There was some error deploying '${RUNR_TMP}/${repo_basename}' files to '${RUNR_DIR}'." 1>&2
+      fi
+    done <<EOF
+$(echo "$RUNR_ASSETS_REPOS" | tr -s ' ' '\n')
 EOF
-fi
+  fi
+}
+
 
 # #############################################################################
 # Run sequences
 
-for recipe in "$@" ; do
-  for dir in */ ; do
-    if [ -f "./${dir%/}/${recipe%.sh}.sh" ] ; then
-      bash "./${dir%/}/${recipe%.sh}.sh"
-    fi
+
+_run_sequences () {
+  for recipe in "$@" ; do
+    for dir in */ ; do
+      if [ -f "./${dir%/}/${recipe%.sh}.sh" ] ; then
+        bash "./${dir%/}/${recipe%.sh}.sh"
+      fi
+    done
   done
-done
+}
+
+
+# #############################################################################
+
+
+_main () {
+  _provision_runr
+  _clone_assets
+  _run_sequences "$@"
+}
+
+
+_main "$@"
