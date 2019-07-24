@@ -144,12 +144,12 @@ _provision_runr () {
       || curl ${DLOPTEXTRA} ${IGNORE_SSL_OPTION} -LSfs -o "${HOME}"/.runr.zip "$RUNR_SRC_ALT"
     unzip -o "${HOME}"/.runr.zip -d "${HOME}" \
       || exit $?
-    zip_dir=$(unzip -l "${HOME}"/.runr.zip | head -5 | tail -1 | awk '{print $NF;}')
+    zip_root_dir=$(unzip -l "${HOME}"/.runr.zip | head -5 | tail -1 | awk '{print $NF;}')
 
-    echo "Zip dir: '${zip_dir}'" 1>&2
+    echo "Zip dir: '${zip_root_dir}'" 1>&2
 
-    if ! (cd "${HOME}"; mv -f -v "${zip_dir}" "${RUNR_DIR}" 1>&2) ; then
-      echo "RUNR: FATAL: Could not move '${zip_dir}' to '${RUNR_DIR}'" 1>&2
+    if ! (cd "${HOME}"; mv -f -v "${zip_root_dir}" "${RUNR_DIR}" 1>&2) ; then
+      echo "RUNR: FATAL: Could not move '${zip_root_dir}' to '${RUNR_DIR}'" 1>&2
       exit 1
     fi
   fi
