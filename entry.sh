@@ -40,6 +40,7 @@ export INSTPROG="$APTPROG"; which "$RPMPROG" >/dev/null 2>&1 && export INSTPROG=
 # #############################################################################
 # Options
 
+: ${RUNR_PRINT_HEADER:=false} ; export RUNR_PRINT_HEADER
 : ${RUNR_REPOS_KEEP:=false}
 : ${RUNR_REPOS:=https://github.com/stroparo/dotfiles.git}; export RUNR_REPOS
 : ${RUNR_QUIET:=false}
@@ -48,10 +49,11 @@ export INSTPROG="$APTPROG"; which "$RPMPROG" >/dev/null 2>&1 && export INSTPROG=
 
 # Options:
 OPTIND=1
-while getopts ':cd:kqr:uv' option ; do
+while getopts ':cdh:kqr:uv' option ; do
   case "${option}" in
     c) export RUNR_REPOS_KEEP=true ;;
     d) export RUNR_DIR="$OPTARG" ;;
+    h) export RUNR_PRINT_HEADER=true ;;
     k) export IGNORE_SSL=true ;;
     q) RUNR_QUIET=true ;;
     r) export RUNR_REPOS="$OPTARG" ;;
@@ -84,8 +86,31 @@ _install_packages () {
 }
 
 
-_print_bar () {
+_print_header_bar () {
   echo "################################################################################"
+}
+
+
+_print_footer () {
+  if ! ${RUNR_PRINT_HEADER:-false} ; then return ; fi
+  echo
+  echo "////////////////////////////////////////////////////////////////////////////////"
+}
+
+
+_print_header () {
+
+  if ! ${RUNR_PRINT_HEADER:-false} ; then return ; fi
+
+  typeset recipe="$1"
+
+  echo
+  echo
+  _print_header_bar
+  echo "==> Routine: '${recipe}'"
+  echo "    PWD='$(pwd)'"
+  echo
+  echo
 }
 
 
@@ -214,7 +239,9 @@ fi
 for recipe in "$@" ; do
   for dir in */ ; do
     if [ -f "./${dir%/}/${recipe%.sh}.sh" ] ; then
+      _print_header
       bash "./${dir%/}/${recipe%.sh}.sh"
+      _print_footer
     fi
   done
 done
