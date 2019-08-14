@@ -85,8 +85,41 @@ _install_packages () {
 }
 
 
-_print_bar () {
+_print_footer_bar () {
+  echo "////////////////////////////////////////////////////////////////////////////////"
+}
+
+_print_header_bar () {
   echo "################################################################################"
+}
+
+
+_print_footer () {
+
+  if ${RUNR_QUIET:-false} ; then
+    return
+  fi
+
+  echo
+  _print_footer_bar
+}
+
+
+_print_header () {
+
+  if ${RUNR_QUIET:-false} ; then
+    return
+  fi
+
+  typeset recipe="$1"
+
+  echo
+  echo
+  _print_header_bar
+  echo "==> Routine: '${recipe}'"
+  echo "    PWD='$(pwd)'"
+  echo
+  echo
 }
 
 
@@ -300,7 +333,9 @@ _run_sequences () {
   for recipe in "$@" ; do
     for dir in */ ; do
       if [ -f "./${dir%/}/${recipe%.sh}.sh" ] ; then
+        _print_header
         bash "./${dir%/}/${recipe%.sh}.sh"
+        _print_footer
       fi
     done
   done
