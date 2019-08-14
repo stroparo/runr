@@ -12,14 +12,15 @@ $PROGNAME [-c] [-d runr_dir] [-q] [-r repos_list] [-u] [-v]
 
 -c    Keeps previous assets repos i.e. do not clone repos with recipes
       (must have one from a previous run in order to look recipes up)
+
 -d runr_dir
       Overrides default RUNR_DIR
 
 -k    use insecure curl ie do not check for certificates, ssl etc.
--q    quiet
+-q    quiet (not exported i.e. does not propagate to runr subprocesses)
 -r    repository(ies) desired instead of the default (stroparo/dotfiles)
 -u    has runr update itself i.e. its core, runs prior to any recipe
--v    verbose output
+-v    verbose output (not exported i.e. does not propagate to runr subprocesses)
 "
 
 export RUNR_DIR="${HOME}/.runr"
@@ -40,7 +41,6 @@ export INSTPROG="$APTPROG"; which "$RPMPROG" >/dev/null 2>&1 && export INSTPROG=
 # #############################################################################
 # Options
 
-: ${RUNR_PRINT_HEADER:=false} ; export RUNR_PRINT_HEADER
 : ${RUNR_REPOS_KEEP:=false}
 : ${RUNR_REPOS:=https://github.com/stroparo/dotfiles.git}; export RUNR_REPOS
 : ${RUNR_QUIET:=false}
@@ -49,11 +49,10 @@ export INSTPROG="$APTPROG"; which "$RPMPROG" >/dev/null 2>&1 && export INSTPROG=
 
 # Options:
 OPTIND=1
-while getopts ':cdh:kqr:uv' option ; do
+while getopts ':cd:kqr:uv' option ; do
   case "${option}" in
     c) export RUNR_REPOS_KEEP=true ;;
     d) export RUNR_DIR="$OPTARG" ;;
-    h) export RUNR_PRINT_HEADER=true ;;
     k) export IGNORE_SSL=true ;;
     q) RUNR_QUIET=true ;;
     r) export RUNR_REPOS="$OPTARG" ;;
@@ -86,21 +85,19 @@ _install_packages () {
 }
 
 
+_print_footer_bar () {
+  echo "////////////////////////////////////////////////////////////////////////////////"
+}
+
+
 _print_header_bar () {
   echo "################################################################################"
 }
 
 
-_print_footer () {
-  if ! ${RUNR_PRINT_HEADER:-false} ; then return ; fi
-  echo
-  echo "////////////////////////////////////////////////////////////////////////////////"
-}
-
-
 _print_header () {
 
-  if ! ${RUNR_PRINT_HEADER:-false} ; then return ; fi
+  if ${RUNR_QUIET:-false} ; then return ; fi
 
   typeset recipe="$1"
 
@@ -111,6 +108,15 @@ _print_header () {
   echo "    PWD='$(pwd)'"
   echo
   echo
+}
+
+
+_print_footer () {
+
+  if ${RUNR_QUIET:-false} ; then return ; fi
+
+  echo
+  _print_footer_bar
 }
 
 
