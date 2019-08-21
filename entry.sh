@@ -24,7 +24,6 @@ $PROGNAME [-c] [-d runr_dir] [-q] [-r repos_list] [-u] [-v]
 "
 
 : ${RUNR_DIR:=${HOME}/.runr} ; export RUNR_DIR
-export RUNR_BAK_DIRNAME="${RUNR_DIR}.bak.$(date '+%Y%m%d-%OH%OM%OS')"
 
 : ${DEV:=${HOME}/workspace} ; export DEV
 : ${OVERRIDE_SUBL_PREFS:=false} ; export OVERRIDE_SUBL_PREFS
@@ -61,6 +60,10 @@ while getopts ':cd:kqr:uv' option ; do
   esac
 done
 shift "$((OPTIND-1))"
+
+export RUNR_BAK_DIRNAME="${RUNR_DIR}.bak.$(date '+%Y%m%d-%OH%OM%OS')"
+
+RUNR_TMP="${RUNR_DIR}/tmp"
 
 export RUNR_QUIET
 if ${RUNR_QUIET:-false} ; then
@@ -298,7 +301,6 @@ _provision_runr () {
 
 
 _clone_assets_prep () {
-RUNR_TMP="${RUNR_DIR}/tmp"
   mkdir "${RUNR_TMP}" 2>/dev/null
   if [ ! -d "${RUNR_TMP}" ] ; then
     echo "RUNR: FATAL: There was some error creating temp dir at '${RUNR_TMP}'." 1>&2
