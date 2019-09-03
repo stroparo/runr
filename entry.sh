@@ -337,7 +337,7 @@ _run_sequences () {
   for recipe in "$@" ; do
     for dir in */ ; do
       if [ -f "./${dir%/}/${recipe%.sh}.sh" ] ; then
-        _print_header
+        _print_header "${dir%/}/${recipe%.sh}"
         bash "./${dir%/}/${recipe%.sh}.sh"
         _print_footer
       fi
