@@ -255,7 +255,19 @@ _setup_final_dir () {
 }
 
 
-_setup_enforce () {
+_setup () {
+
+  if [ -d "${RUNR_DIR}" ] && ! ${UPDATE_LOCAL_RUNR:-false} ; then
+    return
+  fi
+
+  _setup_download
+  _setup_extract
+  _setup_final_dir
+}
+
+
+_enforce_env () {
   if [ ! -e "${RUNR_DIR}"/entry.sh ] ; then
     echo "RUNR: FATAL: No RUNR instance available ('${RUNR_DIR}/entry.sh' does not exist)." 1>&2
     exit 1
@@ -269,19 +281,6 @@ _setup_enforce () {
 }
 
 
-_setup () {
-
-  if [ -d "${RUNR_DIR}" ] && ! ${UPDATE_LOCAL_RUNR:-false} ; then
-    return
-  fi
-
-  _setup_download
-  _setup_extract
-  _setup_final_dir
-  _setup_enforce
-}
-
-
 _provision_runr () {
   export RUNR_SRC="https://bitbucket.org/stroparo/runr/get/master.zip"
   export RUNR_SRC_ALT="https://github.com/stroparo/runr/archive/master.zip"
@@ -289,6 +288,7 @@ _provision_runr () {
   _info_runr_dir
   _update_pre_proc
   _setup
+  _enforce_env
   _update_post_proc
   if ! ${RUNR_ASSETS_KEEP} ; then
     _exclude_non_core_files
