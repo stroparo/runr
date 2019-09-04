@@ -178,7 +178,7 @@ _exclude_non_core_files () {
   sed -e "#^#${exclude_root}/#" "${RUNR_DIR}"/core_files.lst \
     > "${RUNR_DIR}"/core_files.lst.tmp
 
-  find "${exclude_root}" -depth \
+  find "${exclude_root}" -mindepth 1 -depth \
     | fgrep -v -f "${RUNR_DIR}"/core_files.lst.tmp \
     | xargs rm -f -r \
     && rm -f "${RUNR_DIR}"/core_files.lst.tmp
