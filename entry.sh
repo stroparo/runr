@@ -40,8 +40,14 @@ export INSTPROG="$APTPROG"; which "$RPMPROG" >/dev/null 2>&1 && export INSTPROG=
 # #############################################################################
 # Options
 
+if [ -z "RUNR_ASSETS_REPOS" ] ; then
+  export RUNR_ASSETS_REPOS="https://bitbucket.org/stroparo/dotfiles.git"
+fi
+if [ -z "RUNR_ASSETS_REPOS_FALLBACKS" ] ; then
+  export RUNR_ASSETS_REPOS_FALLBACKS="https://github.com/stroparo/dotfiles.git"
+fi
+
 : ${RUNR_ASSETS_KEEP:=false} ; export RUNR_ASSETS_KEEP
-: ${RUNR_ASSETS_REPOS:=https://github.com/stroparo/dotfiles.git}; export RUNR_ASSETS_REPOS
 : ${RUNR_QUIET:=false}
 : ${UPDATE_LOCAL_RUNR:=false} ; export UPDATE_LOCAL_RUNR
 : ${VERBOSE:=false}
@@ -316,14 +322,17 @@ _clone_assets () {
   if ! ${RUNR_ASSETS_KEEP} && [ -n "$RUNR_ASSETS_REPOS" ] ; then
     while read repo ; do
       repo_basename=$(basename "${repo%.git}")
-      git clone --depth=1 ${RUNR_QUIET_OPTION_Q} "$repo" "${RUNR_TMP}/${repo_basename}"
+      if ! git clone --depth=1 ${RUNR_QUIET_OPTION_Q} "$repo" "${RUNR_TMP}/${repo_basename}" ; then
+        repo_fallback="$(echo "${RUNR_ASSETS_REPOS_FALLBACKS}" | egrep "/$repo_basename[.]?[^/]*$" | head -1)"
+        git clone --depth=1 ${RUNR_QUIET_OPTION_Q} "${repo_fallback}" "${RUNR_TMP}/${repo_basename}"
+      fi
       if cp -f -R ${VERBOSE_OPTION:+-${VERBOSE_OPTION}} "${RUNR_TMP}/${repo_basename}"/* "${RUNR_DIR}"/ ; then
         rm -f -r "${RUNR_TMP}/${repo_basename}"
       else
         echo "RUNR: WARN: There was some error deploying '${RUNR_TMP}/${repo_basename}' files to '${RUNR_DIR}'." 1>&2
       fi
     done <<EOF
-$(echo "$RUNR_ASSETS_REPOS" | tr -s ' ' '\n')
+$(echo "$RUNR_ASSETS_REPOS" | tr -s ' ' '\n' | grep .)
 EOF
   fi
 }
