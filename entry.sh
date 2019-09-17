@@ -40,10 +40,10 @@ export INSTPROG="$APTPROG"; which "$RPMPROG" >/dev/null 2>&1 && export INSTPROG=
 # #############################################################################
 # Options
 
-if [ -z "RUNR_ASSETS_REPOS" ] ; then
+if [ -z "${RUNR_ASSETS_REPOS}" ] ; then
   export RUNR_ASSETS_REPOS="https://bitbucket.org/stroparo/dotfiles.git"
 fi
-if [ -z "RUNR_ASSETS_REPOS_FALLBACKS" ] ; then
+if [ -z "${RUNR_ASSETS_REPOS_FALLBACKS}" ] ; then
   export RUNR_ASSETS_REPOS_FALLBACKS="https://github.com/stroparo/dotfiles.git"
 fi
 
