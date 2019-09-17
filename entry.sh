@@ -89,7 +89,7 @@ _install_packages () {
   for package in "$@" ; do
     echo "Installing '$package'..."
     if ! sudo $INSTPROG install -y "$package" >/tmp/pkg-install-${package}.log 2>&1 ; then
-      echo "RUNR: WARN: There was an error installing package '$package' - see '/tmp/pkg-install-${package}.log'." 1>&2
+      echo "RUNR: WARN: There was an error installing package '$package' - see '/tmp/pkg-install-${package}.log'."
     fi
   done
 }
@@ -140,7 +140,7 @@ _print_header () {
 
 if (uname | grep -q linux) ; then
   if ! which sudo >/dev/null 2>&1 ; then
-    echo "RUNR: WARN: Installing sudo via root and opening up visudo" 1>&2
+    echo "RUNR: WARN: Installing sudo via root and opening up visudo"
     su - -c "bash -c '$INSTPROG install sudo; visudo'"
   fi
   if ! sudo whoami >/dev/null 2>&1 ; then
@@ -161,8 +161,8 @@ fi
 
 _info_runr_dir () {
   if ! ${RUNR_QUIET:-false} ; then
-    echo 1>&2
-    echo "RUNR: INFO: RUNR dir is '${RUNR_DIR}'." 1>&2
+    echo
+    echo "RUNR: INFO: RUNR dir is '${RUNR_DIR}'."
   fi
 }
 
@@ -199,7 +199,7 @@ _archive_runr_dir () {
           rm -f -r "${RUNR_BAK_DIRNAME}"
         fi
       else
-        echo "RUNR: WARN: Could not make tarball but kept backup in the '${RUNR_BAK_DIRNAME}' dir." 1>&2
+        echo "RUNR: WARN: Could not make tarball but kept backup in the '${RUNR_BAK_DIRNAME}' dir."
       fi
     else
       echo "RUNR: FATAL: Could not archive existing '${RUNR_DIR}'." 1>&2
@@ -252,9 +252,9 @@ _setup_extract () {
 
 _setup_final_dir () {
   zip_root_dir=$(unzip -l "${HOME}"/.runr.zip | head -5 | tail -1 | awk '{print $NF;}')
-  echo "RUNR: INFO: RUNR package's root directory: '${zip_root_dir}'" 1>&2
-  echo "RUNR: INFO: RUNR package's root rename to final dir '${RUNR_DIR}':" 1>&2
-  if ! (cd "${HOME}"; mv -f -v "${zip_root_dir}" "${RUNR_DIR}" 1>&2) ; then
+  echo "RUNR: INFO: RUNR package's root directory: '${zip_root_dir}'"
+  echo "RUNR: INFO: RUNR package's root rename to final dir '${RUNR_DIR}':"
+  if ! (cd "${HOME}"; mv -f -v "${zip_root_dir}" "${RUNR_DIR}") ; then
     echo "RUNR: FATAL: Could not move/rename '${zip_root_dir}' to '${RUNR_DIR}'" 1>&2
     exit 1
   fi
@@ -279,7 +279,7 @@ _enforce_env () {
     exit 1
   fi
   cd "${RUNR_DIR}"
-  echo "RUNR: INFO: Current dir (should be RUNR's): '$(pwd)'" 1>&2
+  echo "RUNR: INFO: Current dir (should be RUNR's): '$(pwd)'"
   if [ "${RUNR_DIR##*/}" != "${PWD##*/}" ] ; then
     echo "RUNR: FATAL: Current dir's basename differs from RUNR dir's ('${RUNR_DIR}')" 1>&2
     exit 1
@@ -322,6 +322,7 @@ _clone_assets () {
   if ! ${RUNR_ASSETS_KEEP} && [ -n "$RUNR_ASSETS_REPOS" ] ; then
     while read repo ; do
       repo_basename=$(basename "${repo%.git}")
+      echo "RUNR: INFO: Cloning assets repo '$repo'..."
       if ! git clone --depth=1 ${RUNR_QUIET_OPTION_Q} "$repo" "${RUNR_TMP}/${repo_basename}" ; then
         repo_fallback="$(echo "${RUNR_ASSETS_REPOS_FALLBACKS}" | egrep "/$repo_basename[.]?[^/]*$" | head -1)"
         git clone --depth=1 ${RUNR_QUIET_OPTION_Q} "${repo_fallback}" "${RUNR_TMP}/${repo_basename}"
@@ -329,7 +330,7 @@ _clone_assets () {
       if cp -f -R ${VERBOSE_OPTION:+-${VERBOSE_OPTION}} "${RUNR_TMP}/${repo_basename}"/* "${RUNR_DIR}"/ ; then
         rm -f -r "${RUNR_TMP}/${repo_basename}"
       else
-        echo "RUNR: WARN: There was some error deploying '${RUNR_TMP}/${repo_basename}' files to '${RUNR_DIR}'." 1>&2
+        echo "RUNR: WARN: There was some error deploying '${RUNR_TMP}/${repo_basename}' files to '${RUNR_DIR}'."
       fi
     done <<EOF
 $(echo "$RUNR_ASSETS_REPOS" | tr -s ' ' '\n' | grep .)
