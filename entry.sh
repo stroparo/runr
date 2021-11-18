@@ -26,7 +26,6 @@ $PROGNAME [-c] [-d runr_dir] [-q] [-r repos_list] [-u] [-v]
 : ${RUNR_DIR:=${HOME}/.runr} ; export RUNR_DIR
 
 : ${DEV:=${HOME}/workspace} ; export DEV
-: ${OVERRIDE_SUBL_PREFS:=false} ; export OVERRIDE_SUBL_PREFS
 
 # Security
 : ${IGNORE_SSL:=false} ; export IGNORE_SSL
