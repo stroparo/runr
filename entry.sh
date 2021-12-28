@@ -14,8 +14,8 @@ This utility executes scripts from remote repositories.
 Syntax
 $PROGNAME [-c] [-d runr_dir] [-q] [-r repos_list] [-u] [-v]
 
--c    Keeps previous assets repos i.e. do not clone repos with recipes
-      (must have one from a previous run in order to look recipes up)
+-c    Keeps previous assets repos i.e. do not clone repos with scripts
+      IMPORTANT: must have one from a previous run in order to look scripts up
 
 -d runr_dir
       Overrides default RUNR_DIR
@@ -24,7 +24,7 @@ $PROGNAME [-c] [-d runr_dir] [-q] [-r repos_list] [-u] [-v]
 -k    use insecure curl ie do not check for certificates, ssl etc.
 -q    quiet (not exported i.e. does not propagate to runr subprocesses)
 -r    repository(ies) desired to fetch assets from, instead of the default (stroparo/dotfiles)
--u    has runr update itself i.e. its core, runs prior to any recipe
+-u    has runr update itself i.e. its core, runs prior to any script
 -v    verbose output (not exported i.e. does not propagate to runr subprocesses, if any)
 "
 
@@ -127,12 +127,12 @@ _print_header () {
     return
   fi
 
-  typeset recipe="$1"
+  typeset script_path="$1"
 
   echo
   echo
   _print_header_bar
-  echo "==> Routine: '${recipe}'"
+  echo "==> Script path: '${script_path}'"
   echo "    PWD='$(pwd)'"
   echo
   echo
@@ -349,14 +349,21 @@ EOF
 
 
 _run_sequences () {
-  for recipe in "$@" ; do
-    for dir in */ ; do
-      if [ -f "./${dir%/}/${recipe%.sh}.sh" ] ; then
-        _print_header "${dir%/}/${recipe%.sh}"
-        bash "./${dir%/}/${recipe%.sh}.sh"
-        _print_footer
-      fi
-    done
+  for script_path in "$@" ; do
+    if [ -f "./${script_path%.sh}.sh" ] ; then
+      _print_header "./${script_path%.sh}.sh"
+      bash "./${script_path%.sh}.sh"
+      _print_footer
+    # In case the path is missing, try it inside one of the immediate subdirs.:
+    else
+      for dir in */ ; do
+        if [ -f "./${dir%/}/${script_path%.sh}.sh" ] ; then
+          _print_header "./${dir%/}/${script_path%.sh}.sh"
+          bash "./${dir%/}/${script_path%.sh}.sh"
+          _print_footer
+        fi
+      done
+    fi
   done
 }
 
