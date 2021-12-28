@@ -7,7 +7,11 @@ export PROGNAME="entry.sh"
 # #############################################################################
 # Globals
 
-export USAGE="${PROGNAME} (runr) syntax
+export USAGE="${PROGNAME} (runr)
+
+This utility executes scripts from remote repositories.
+
+Syntax
 $PROGNAME [-c] [-d runr_dir] [-q] [-r repos_list] [-u] [-v]
 
 -c    Keeps previous assets repos i.e. do not clone repos with recipes
