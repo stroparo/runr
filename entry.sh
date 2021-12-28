@@ -53,10 +53,11 @@ fi
 
 # Options:
 OPTIND=1
-while getopts ':cd:kqr:uv' option ; do
+while getopts ':cdh:kqr:uv' option ; do
   case "${option}" in
     c) export RUNR_ASSETS_KEEP=true ;;
     d) export RUNR_DIR="$OPTARG" ;;
+    h) echo "$USAGE" ; exit ;;
     k) export IGNORE_SSL=true ;;
     q) RUNR_QUIET=true ;;
     r) export RUNR_ASSETS_REPOS="$OPTARG" ;;
