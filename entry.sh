@@ -7,7 +7,7 @@ export PROGNAME="entry.sh"
 # #############################################################################
 # Globals
 
-export USAGE="Syntax
+export USAGE="${PROGNAME} (runr) syntax
 $PROGNAME [-c] [-d runr_dir] [-q] [-r repos_list] [-u] [-v]
 
 -c    Keeps previous assets repos i.e. do not clone repos with recipes
@@ -16,11 +16,12 @@ $PROGNAME [-c] [-d runr_dir] [-q] [-r repos_list] [-u] [-v]
 -d runr_dir
       Overrides default RUNR_DIR
 
+-h    displays this usage message
 -k    use insecure curl ie do not check for certificates, ssl etc.
 -q    quiet (not exported i.e. does not propagate to runr subprocesses)
--r    repository(ies) desired instead of the default (stroparo/dotfiles)
+-r    repository(ies) desired to fetch assets from, instead of the default (stroparo/dotfiles)
 -u    has runr update itself i.e. its core, runs prior to any recipe
--v    verbose output (not exported i.e. does not propagate to runr subprocesses)
+-v    verbose output (not exported i.e. does not propagate to runr subprocesses, if any)
 "
 
 : ${RUNR_DIR:=${HOME}/.runr} ; export RUNR_DIR
@@ -53,7 +54,7 @@ fi
 
 # Options:
 OPTIND=1
-while getopts ':cdh:kqr:uv' option ; do
+while getopts ':cd:hkqr:uv' option ; do
   case "${option}" in
     c) export RUNR_ASSETS_KEEP=true ;;
     d) export RUNR_DIR="$OPTARG" ;;
