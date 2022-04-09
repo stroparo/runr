@@ -266,15 +266,26 @@ _setup_final_dir () {
 }
 
 
+_setup_from_local_repo () {
+  if [ ! -f "${DEV}/runr/entry.sh" ] ; then
+    return 1
+  fi
+  mkdir -p "${RUNR_DIR}"
+  cp -a "${DEV}/runr"/* "${RUNR_DIR}"/
+}
+
+
 _setup () {
 
   if [ -d "${RUNR_DIR}" ] && ! ${UPDATE_LOCAL_RUNR:-false} ; then
     return
   fi
 
-  _setup_download
-  _setup_extract
-  _setup_final_dir
+  if ! _setup_from_local_repo ; then
+    _setup_download
+    _setup_extract
+    _setup_final_dir
+  fi
 }
 
 
