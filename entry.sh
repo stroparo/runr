@@ -327,9 +327,9 @@ _clone_assets () {
   if ! ${RUNR_ASSETS_KEEP} && [ -n "$RUNR_ASSETS_REPOS" ] ; then
     while read repo ; do
       repo_basename=$(basename "${repo%.git}")
-      echo "RUNR: INFO: Cloning assets repo '$repo'..."
-      if ! git clone --depth=1 ${RUNR_QUIET_OPTION_Q} "$repo" "${RUNR_TMP}/${repo_basename}" ; then
-        repo_fallback="$(echo "${RUNR_ASSETS_REPOS_FALLBACKS}" | egrep "/$repo_basename[.]?[^/]*$" | head -1)"
+      echo "RUNR: INFO: Cloning assets repo '${repo}'..."
+      if ! git clone --depth=1 ${RUNR_QUIET_OPTION_Q} "${repo}" "${RUNR_TMP}/${repo_basename}" ; then
+        repo_fallback="$(echo "${RUNR_ASSETS_REPOS_FALLBACKS}" | egrep "/${repo_basename}[.]?[^/]*$" | head -1)"
         git clone --depth=1 ${RUNR_QUIET_OPTION_Q} "${repo_fallback}" "${RUNR_TMP}/${repo_basename}"
       fi
       if cp -f -R ${VERBOSE_OPTION:+-${VERBOSE_OPTION}} "${RUNR_TMP}/${repo_basename}"/* "${RUNR_DIR}"/ ; then
